@@ -1,4 +1,4 @@
-## step0: Docker
+## 0: Docker
 
 | Term | What it is |
 |---|---|
@@ -25,7 +25,7 @@ Docker Architecture
 - **Docker Hub** — remote registry where images are stored
 
 ---
-## step1:Docker Commands
+## 1: Docker Commands
 Step1:Docker commands
 
 ```
@@ -102,7 +102,7 @@ docker exec -it <containerId> <cmd>      # run command inside container
 | `-d` | Detached — run in background | Web apps, servers |
 
 ---
-## step2:Running JDK Docker Container
+## 2: Running JDK Docker Container
 ```bash
 # pull JDK image
 docker pull eclipse-temurin:25-jdk-ubi10-minimal
@@ -144,7 +144,7 @@ docker rm <containerId>
 
 ---
 
-## step3:Packing The Spring Boot Web App
+## 3: Packing The Spring Boot Web App
 
 1. **Create Project**
 
@@ -166,7 +166,7 @@ docker rm <containerId>
 
    ```xml
    <build>
-       <finalName>SprWebDkr</finalName>
+       <finalName>rest-demo</finalName>
    </build>
    ```
 
@@ -179,7 +179,7 @@ docker rm <containerId>
 5. **Run Jar**
 
    ```bash
-   java -jar target/SprWebDkr.jar
+   java -jar target/rest-demo.jar
    ```
 
 6. **Test in Browser**
@@ -189,7 +189,7 @@ docker rm <containerId>
 ---
 
 
-## step4:Running Spring Boot Web App On Docker
+## 4: Running Spring Boot Web App On Docker
 
 ### Check Running Containers
 
@@ -231,9 +231,9 @@ docker exec <container_name> ls /tmp
 ###  Commit the Container to Create a New Docker Image
 
 ```bash
-docker commit <container_name> telusko/rest-demo:v1
+docker commit <container_name> utk/rest-demo:v1
 ```
-> Creates a new Docker image named `telusko/rest-demo` with tag `v1` from the current container state.
+> Creates a new Docker image named `utk/rest-demo` with tag `v1` from the current container state.
 
 
 ### List Docker Images
@@ -241,15 +241,15 @@ docker commit <container_name> telusko/rest-demo:v1
 ```bash
 docker images
 ```
-> Verifies that `telusko/rest-demo:v1` image has been created successfully.
+> Verifies that `utk/rest-demo:v1` image has been created successfully.
 
 
 ### Default Behavior: JShell
 
-When running telusko/rest-demo:v1, the container defaults to JShell:
+When running utk/rest-demo:v1, the container defaults to JShell:
 
 ```bash
-docker run telusko/rest-demo:v1
+docker run utk/rest-demo:v1
 ```
 
 
@@ -258,7 +258,7 @@ docker run telusko/rest-demo:v1
 To override the default JShell behavior, the `--change` flag is used while committing:
 
 ```bash
-docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' <container_name> telusko/rest-demo:v2
+docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' <container_name> utk/rest-demo:v2
 ```
 > This sets the default command to run the JAR directly when the image is run.
 
@@ -266,7 +266,7 @@ docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' <container_n
 ### Run the Updated Image (v2)
 
 ```bash
-docker run telusko/rest-demo:v2
+docker run utk/rest-demo:v2
 ```
 > This will now run the Spring Boot application from the JAR instead of entering JShell.
 
@@ -274,7 +274,31 @@ docker run telusko/rest-demo:v2
 ### Map Ports While Running the Container
 
 ```bash
-docker run -p 8081:8081 telusko/rest-demo:v2
+docker run -p 8081:8081 utk/rest-demo:v2
 ```
 > Maps port `8081` of the container to `8081` on the host machine.
 
+## 5: Dockerfile For Docker Images
+
+---
+FROM amazoncorretto:26-jdk
+LABEL authors="Utkarsh"
+ADD target/rest-demo.jar rest-demo.jar
+ENTRYPOINT ["java", "-jar","/rest-demo.jar"]
+----
+
+docker build -t utk/rest-demo:v4 .   
+
+docker run -p 8080:8080 utk/rest-demo:v4
+
+[//]: # ()
+[//]: # (## 6: Web App With Postgres)
+
+[//]: # ()
+[//]: # (## 7: Docker Compose)
+
+[//]: # ()
+[//]: # (## 8: Running Multiple Containers)
+
+[//]: # ()
+[//]: # (## 9: Docker Volumes)
