@@ -191,60 +191,60 @@ docker rm <containerId>
 
 ## 4: Running Spring Boot Web App On Docker
 
-### Check Running Containers
+1. **Check Running Containers**
 
 ```bash
 docker ps
 ```
 
-### List All Files in the Container (JDK Environment)
+2. **List All Files in the Container (JDK Environment)**
 
 ```bash
 docker exec <container_name> ls -a
 ```
-> Lists all folders and files in the container's root directory.
+ Lists all folders and files in the container's root directory.
 
-### Check Contents of /tmp Directory
+3. **Check Contents of /tmp Directory**
 
 ```bash
 docker exec <container_name> ls /tmp
 ```
-> It will contain only one file in /tmp at the initial stage.
+ It will contain only one file in /tmp at the initial stage.
 
 
-###  Copy the Spring Boot JAR File into the Container
+4.  Copy the Spring Boot JAR File into the Container
 
 ```bash
 docker cp target/rest-demo.jar <container_name>:/tmp
 ```
-> This copies the `rest-demo.jar` into the container’s /tmp directory.
+ This copies the `rest-demo.jar` into the container’s /tmp directory.
 
 
-### Verify the JAR File is Present
+5. Verify the JAR File is Present
 
 ```bash
 docker exec <container_name> ls /tmp
 ```
-> The `rest-demo.jar` file will be available in addition to the existing content.
+ The `rest-demo.jar` file will be available in addition to the existing content.
 
 
-###  Commit the Container to Create a New Docker Image
+6.  Commit the Container to Create a New Docker Image
 
 ```bash
 docker commit <container_name> utk/rest-demo:v1
 ```
-> Creates a new Docker image named `utk/rest-demo` with tag `v1` from the current container state.
+ Creates a new Docker image named `utk/rest-demo` with tag `v1` from the current container state.
 
 
-### List Docker Images
+7. List Docker Images
 
 ```bash
 docker images
 ```
-> Verifies that `utk/rest-demo:v1` image has been created successfully.
+ Verifies that `utk/rest-demo:v1` image has been created successfully.
 
 
-### Default Behavior: JShell
+8. Default Behavior: JShell
 
 When running utk/rest-demo:v1, the container defaults to JShell:
 
@@ -253,33 +253,34 @@ docker run utk/rest-demo:v1
 ```
 
 
-### Set Default Command to Run JAR Using --change
+9. Set Default Command to Run JAR Using --change
 
 To override the default JShell behavior, the `--change` flag is used while committing:
 
 ```bash
 docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' <container_name> utk/rest-demo:v2
 ```
-> This sets the default command to run the JAR directly when the image is run.
+ This sets the default command to run the JAR directly when the image is run.
 
 
-### Run the Updated Image (v2)
+10. Run the Updated Image (v2)
 
 ```bash
 docker run utk/rest-demo:v2
 ```
-> This will now run the Spring Boot application from the JAR instead of entering JShell.
+ This will now run the Spring Boot application from the JAR instead of entering JShell.
 
 
-### Map Ports While Running the Container
+11. Map Ports While Running the Container
 
 ```bash
 docker run -p 8081:8081 utk/rest-demo:v2
 ```
-> Maps port `8081` of the container to `8081` on the host machine.
+ Maps port `8081` of the container to `8081` on the host machine.
 
 ## 5: Dockerfile For Docker Images
 
+file
 ---
 FROM amazoncorretto:26-jdk
 LABEL authors="Utkarsh"
@@ -289,10 +290,17 @@ ENTRYPOINT ["java", "-jar","/rest-demo.jar"]
 
 docker build -t utk/rest-demo:v4 .   
 
+docker images
+
 docker run -p 8080:8080 utk/rest-demo:v4
 
-[//]: # ()
-[//]: # (## 6: Web App With Postgres)
+## 6: Web App With Postgres
+
+Added PostgreSQL and JPA dependencies to pom.xml
+
+Added student database, repository, and controller for managing students.
+
+Added database initialization, student repository, and REST controller to retrieve students.
 
 [//]: # ()
 [//]: # (## 7: Docker Compose)
