@@ -16,7 +16,12 @@ services:
       - "5433:5432"
     networks:
       - utk-01-docker-net
+    volumes:
+      - utk-01-docker-postgres-data:/var/lib/postgres/data
 
 networks:
   utk-01-docker-net:
     driver: bridge
+
+volumes:
+  utk-01-docker-postgres-data:

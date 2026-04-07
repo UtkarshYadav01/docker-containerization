@@ -435,5 +435,174 @@ GET http://localhost:8090/getStudents
 | Port mapping | `5433:5432` and `8090:8080` expose container ports to your **host machine** |
 
 
-[//]: # ()
-[//]: # (## 9: Docker Volumes)
+# Step 9: Docker Volumes
+
+## Objective
+Understand why container data is lost on `docker-compose down`, and fix it using a **named volume** so PostgreSQL data persists across restarts.
+
+---
+
+## 9.1 — Add a New Endpoint to Insert a Student
+
+Add this endpoint to your controller to test data persistence:
+
+```java
+@RequestMapping("/addStudents")
+public void addStudent(Student student) {
+    Student s = new Student();
+    s.setName("Raj");
+    s.setAge(30);
+    repository.save(s);
+}
+```
+
+Rebuild the JAR:
+```bash
+mvn clean package -DskipTests
+```
+
+---
+
+## 9.2 — Demonstrate the Problem: Data Is Lost on Restart
+
+**Cycle 1 — Add data and verify it exists:**
+
+```bash
+docker-compose up --build
+```
+
+Hit `http://localhost:8090/addStudents`, then check `http://localhost:8090/getStudents`:
+
+```json
+[
+  { "id": 1, "name": "Navin", "age": 20 },
+  { "id": 2, "name": "Kiran", "age": 22 },
+  { "id": 3, "name": "Harsh", "age": 30 },
+  { "id": 4, "name": "Sushil", "age": 12 },
+  { "id": 5, "name": "Raj",   "age": 30 }   ✅ newly added
+]
+```
+
+**Tear down:**
+```bash
+docker-compose down
+```
+```
+✔ Container docker-containerization-app-1           Removed
+✔ Container docker-containerization-postgres-1      Removed
+✔ Network docker-containerization_utk-01-docker-net Removed
+```
+
+**Cycle 2 — Bring it back up:**
+```bash
+docker-compose up --build
+```
+
+Check `http://localhost:8090/getStudents` again:
+
+```json
+[
+  { "id": 1, "name": "Navin",  "age": 20 },
+  { "id": 2, "name": "Kiran",  "age": 22 },
+  { "id": 3, "name": "Harsh",  "age": 30 },
+  { "id": 4, "name": "Sushil", "age": 12 }
+]
+```
+
+❌ **"Raj" is gone.** The PostgreSQL container was destroyed along with all its data.
+
+**Why?** By default, PostgreSQL stores data *inside the container's filesystem*. When the container is removed, that filesystem — and all the data — is deleted with it.
+
+---
+
+## 9.3 — Fix: Add a Named Volume in `docker-compose.yml`
+
+Update `docker-compose.yml` to mount a **named volume** at PostgreSQL's data directory:
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8090:8080"
+    networks:
+      - utk-01-docker-net
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: studentsDkr07042026
+    ports:
+      - "5433:5432"
+    networks:
+      - utk-01-docker-net
+    volumes:
+      - utk-01-docker-postgres-data:/var/lib/postgres/data  # ← mount here
+
+networks:
+  utk-01-docker-net:
+    driver: bridge
+
+volumes:
+  utk-01-docker-postgres-data:   # ← declare the named volume
+```
+
+> ⚠️ The correct PostgreSQL data path is `/var/lib/postgresql/data` (not `/var/lib/postgres/data`). or vice versa
+
+---
+
+## 9.4 — Verify Data Persists Across Restarts
+
+Rebuild and bring everything up:
+```bash
+mvn clean package -DskipTests
+docker-compose down
+docker-compose up --build
+```
+
+Check `http://localhost:8090/getStudents` — existing seed data is intact. Now hit `http://localhost:8090/addStudents` **twice**, then verify:
+
+```json
+[
+  { "id": 1, "name": "Navin",  "age": 20 },
+  { "id": 2, "name": "Kiran",  "age": 22 },
+  { "id": 3, "name": "Harsh",  "age": 30 },
+  { "id": 4, "name": "Sushil", "age": 12 },
+  { "id": 5, "name": "Raj",    "age": 30 },
+  { "id": 6, "name": "Raj",    "age": 30 }
+]
+```
+
+Now tear down and bring back up again:
+```bash
+docker-compose down
+docker-compose up --build
+```
+
+Check `http://localhost:8090/getStudents` — ✅ **all 6 records are still there.** Data survived the restart.
+
+---
+
+## 9.5 — Completely Wipe Data (Including the Volume)
+
+To intentionally destroy the volume and start fresh:
+
+```bash
+docker-compose down -v
+```
+
+The `-v` flag removes the named volume along with the containers. The next `up` will start with a clean database.
+
+---
+
+## Key Takeaways
+
+| Concept | Explanation |
+|---|---|
+| No volume | Data lives inside the container — destroyed with `docker-compose down` |
+| Named volume | Data lives on the **Docker host** — survives container restarts and rebuilds |
+| `/var/lib/postgresql/data` | The directory inside the PostgreSQL container where it stores all DB files |
+| `docker-compose down` | Removes containers and networks, but **keeps** named volumes |
+| `docker-compose down -v` | Removes containers, networks, **and** named volumes — full clean slate |

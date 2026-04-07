@@ -16,4 +16,13 @@ public class StudentController {
     public List<Student> getStudents() {
         return repository.findAll();
     }
+
+    @RequestMapping("/addStudents")
+    public void addStudent() {
+
+        Student s = new Student();
+        s.setName("Raj");
+        s.setAge(30);
+        repository.save(s);
+    }
 }
