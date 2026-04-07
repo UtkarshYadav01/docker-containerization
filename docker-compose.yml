@@ -3,12 +3,20 @@ services:
     build: .
     ports:
       - "8090:8080"
+    networks:
+      - utk-01-docker-net
 
   postgres:
     image: postgres:latest
     environment:
-      username: root
-      password: root
-      DB: studentsDkr07042026
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: studentsDkr07042026
     ports:
       - "5433:5432"
+    networks:
+      - utk-01-docker-net
+
+networks:
+  utk-01-docker-net:
+    driver: bridge

@@ -299,3 +299,141 @@ docker-compose up --build
 # 3. Verify images
 docker images
 ```
+
+# Step 8: Running Multiple Containers
+
+## Objective
+Configure the Spring Boot app and PostgreSQL to run together in Docker containers on the **same custom network**, so they can communicate with each other.
+
+---
+
+## 8.1 — Update Database Connection Properties
+
+Update `application.properties` and add two environment-specific property files to handle different runtime contexts:
+
+**`application-postgres-container.properties`** *(used inside Docker)*
+```properties
+spring.datasource.url=jdbc:postgresql://postgres:5432/studentsDkr07042026
+spring.datasource.username=root
+spring.datasource.password=root
+```
+> ⚠️ Notice the hostname is `postgres` — not `localhost`. Inside Docker, containers refer to each other by **service name**, not `localhost`.
+
+**`application-postgres-local.properties`** *(used when running locally)*
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/studentsDkr07042026
+spring.datasource.username=root
+spring.datasource.password=root
+```
+
+---
+
+## 8.2 — Build the Application JAR
+
+```bash
+mvn clean package -DskipTests
+```
+
+---
+
+## 8.3 — First `docker-compose up` — Containers Start, But Can't Talk
+
+```bash
+docker-compose up --build
+```
+
+Both containers start successfully:
+
+```
+CONTAINER ID   IMAGE                         PORTS                     NAMES
+4048c751baad   postgres:latest               0.0.0.0:5433->5432/tcp    docker-containerization-postgres-1
+4cdf9743929e   docker-containerization-app   0.0.0.0:8090->8080/tcp    docker-containerization-app-1
+```
+
+**Problem:** The app is unreachable from `localhost:8090`.
+
+**Why?** Docker Compose automatically creates a default network (`docker-containerization_default`), but the containers were not explicitly placed on a **shared custom network**, causing communication issues.
+
+```bash
+docker network ls
+# docker-containerization_default   bridge   local   ← auto-created, but not wired correctly
+```
+
+---
+
+## 8.4 — Fix: Define a Custom Network in `docker-compose.yml`
+
+Update `docker-compose.yml` to place both services on the same explicitly defined network:
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8090:8080"
+    networks:
+      - utk-01-docker-net
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: studentsDkr07042026
+    ports:
+      - "5433:5432"
+    networks:
+      - utk-01-docker-net
+
+networks:
+  utk-01-docker-net:
+    driver: bridge
+```
+
+---
+
+## 8.5 — Tear Down and Rebuild
+
+```bash
+docker-compose down
+```
+```
+✔ Container docker-containerization-app-1      Removed
+✔ Container docker-containerization-postgres-1 Removed
+```
+
+```bash
+docker-compose up --build
+```
+
+Verify the custom network now exists:
+```bash
+docker network ls
+
+# docker-containerization_utk-01-docker-net   bridge   local   ✅
+```
+
+---
+
+## 8.6 — Verify It Works
+
+Open your browser or Postman and hit:
+```
+GET http://localhost:8090/getStudents
+```
+✅ **Returns data successfully.**
+
+---
+
+## Key Takeaways
+
+| Concept | Explanation |
+|---|---|
+| `postgres` as hostname | Inside Docker, use the **service name** as the hostname, not `localhost` |
+| Custom network | Both containers must be on the **same network** to discover each other |
+| `docker-compose down` | Always tear down before rebuilding to avoid stale container/network state |
+| Port mapping | `5433:5432` and `8090:8080` expose container ports to your **host machine** |
+
+
+[//]: # ()
+[//]: # (## 9: Docker Volumes)
