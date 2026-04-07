@@ -1,4 +1,8 @@
-## 0: Docker
+# Docker Notes
+
+---
+
+## 0 — Core Concepts
 
 | Term | What it is |
 |---|---|
@@ -7,7 +11,7 @@
 | **Dockerfile** | Instructions to build your own image |
 | **Docker Hub** | Public registry to pull/push images |
 
-Docker Architecture
+### Architecture
 
 ```
         You
@@ -20,293 +24,278 @@ Docker Architecture
    │  Containers │
    └────────────┘
 ```
-- **Docker CLI** — what you type commands into
-- **Docker Daemon** — the background service that does the work
-- **Docker Hub** — remote registry where images are stored
+
+| Component | Role |
+|---|---|
+| Docker CLI | What you type commands into |
+| Docker Daemon | Background service that does the work |
+| Docker Hub | Remote registry where images are stored |
 
 ---
-## 1: Docker Commands
-Step1:Docker commands
 
-```
-==============================
-        DOCKER CHEAT SHEET
-==============================
+## 1 — Docker Commands
 
-# 1. Check Docker
-docker info                              # system-wide Docker info
+```bash
+# ── System ──────────────────────────────────────────────
 docker --version                          # check version
+docker info                               # system-wide info
+docker help                               # show all commands
 
-# 2. Explore CLI
-docker help                               # show commands
-
-# 3. Search & Pull Images
+# ── Search & Pull Images ────────────────────────────────
 docker search <name>                      # find images on Docker Hub
 docker pull <image>:<tag>                 # download image
 
-# 4. List & Remove Images
+# ── List & Remove Images ────────────────────────────────
 docker images                             # list images
 docker images -a                          # include intermediate images
 docker rmi <imageId>                      # remove image
 
-# 5. Create & Start Containers
+# ── Create & Start Containers ───────────────────────────
 docker create <imageId>                   # create container (not started)
 docker start <containerId>                # start container
-docker start -ai <containerId>           # start + attach terminal
+docker start -ai <containerId>            # start + attach terminal
 
-# 6. Run Containers (all-in-one)
+# ── Run Containers (all-in-one) ─────────────────────────
 docker run <image>                        # pull + create + start
 docker run -it <image>                    # run interactively
 docker run -d -p 8080:80 nginx            # run web app in background
 
-# 7. Inspect Containers
+# ── Inspect & Manage Containers ─────────────────────────
 docker ps                                 # running containers
 docker ps -a                              # all containers
-
-# 8. Manage Containers
 docker pause <containerId>                # freeze container
 docker unpause <containerId>              # resume container
 docker stop <containerId>                 # graceful shutdown
 docker rm <containerId>                   # delete container
 
-# 9. Debug & Logs
+# ── Debug & Logs ────────────────────────────────────────
 docker logs <containerId>                 # view container output
-docker exec -it <containerId> <cmd>      # run command inside container
-
-# ============================
-# Docker Flags Explained
-# ============================
-# -i       : Interactive — keep STDIN open (when container expects input)
-# -t       : TTY — allocate a terminal (when you want a shell)
-# -it      : Interactive terminal — combine -i and -t for shell access
-# -a       : Attach — see container output (live logs)
-# -ai      : Attach + interactive — start a stopped interactive container
-# -d       : Detached — run container in background (web apps, servers)
-
-# Example Usage:
-# docker run -it ubuntu bash       # interactive shell
-# docker start -ai <containerId>   # attach to stopped container
-# docker run -d -p 8080:80 nginx   # run nginx in background
+docker exec -it <containerId> <cmd>       # run command inside container
 ```
+
 > `docker run` = `pull + create + start` in one command
 
-### Flags Explained
+### Flags
 
 | Flag | Meaning | When to use |
-|------|---------|-------------|
+|---|---|---|
 | `-i` | Interactive — keep STDIN open | When container expects input |
 | `-t` | TTY — allocate a terminal | When you want a shell |
-| `-it` | Interactive terminal | Use together always for shell access |
+| `-it` | Interactive terminal | Use together for shell access |
 | `-a` | Attach — see container output | When you want to see logs |
 | `-ai` | Attach + interactive | Start a stopped interactive container |
 | `-d` | Detached — run in background | Web apps, servers |
 
 ---
-## 2: Running JDK Docker Container
+
+## 2 — Running a JDK Container
+
 ```bash
-# pull JDK image
+# Pull JDK image
 docker pull eclipse-temurin:25-jdk-ubi10-minimal
- 
-# run interactively — drops you into a shell inside the container
+
+# Run interactively — drops you into a shell inside the container
 docker run -it eclipse-temurin:25-jdk-ubi10-minimal
- 
-# inside container you can run
+
+# Inside the container
 java -version
 jshell
- 
-# exit
+
+# Exit
 exit
- 
-# check state
+
+# Check state
 docker ps -a
- 
-# clean up
+
+# Clean up
 docker stop <containerId>
 docker rm <containerId>
 ```
 
-> Container ID can be shortened — first 2–3 unique characters work.
-> `docker start 38f` works instead of `docker start 38f89eee8292`
- 
----
+> Container ID can be shortened — the first 2–3 unique characters work.
+> For example, `docker start 38f` instead of `docker start 38f89eee8292`.
 
 ### Common Mistakes & Fixes
 
 | Problem | Cause | Fix |
-|---------|-------|-----|
+|---|---|---|
 | `docker start` shows nothing | Output not attached | Add `-a` flag |
 | Container exits immediately | No interactive session | Use `docker run -it` |
-| `docker rmi` fails | Container still exists | `docker rm` container first |
+| `docker rmi` fails | Container still exists | Run `docker rm` first |
 | Can't find container | Looking at running only | Use `docker ps -a` |
 | `docker start -it` does nothing | Wrong flag for start | Use `docker start -ai` instead |
- 
----
 
 ---
 
-## 3: Packing The Spring Boot Web App
+## 3 — Packaging a Spring Boot Web App
 
-1. **Create Project**
+### 1. Create the project
 
-    * Use Spring Initializr → Maven → Spring Web.
+Use [Spring Initializr](https://start.spring.io) → Maven → Spring Web.
 
-2. **Add Controller**
+### 2. Add a controller
 
-   ```java
-   @RestController
-   public class HelloController {
-       @GetMapping("/")
-       public String helloWorld() { return "Hello World"; }
-   }
-   ```
+```java
+@RestController
+public class HelloController {
+    @GetMapping("/")
+    public String helloWorld() { return "Hello World"; }
+}
+```
 
-    * Commit: `Add initial Spring Boot REST controller for "Hello World"`
+### 3. Update `pom.xml`
 
-3. **Update `pom.xml`**
+```xml
+<build>
+    <finalName>rest-demo</finalName>
+</build>
+```
 
-   ```xml
-   <build>
-       <finalName>rest-demo</finalName>
-   </build>
-   ```
-
-4. **Build Jar**
-
-   ```bash
-   mvn clean package
-   ```
-
-5. **Run Jar**
-
-   ```bash
-   java -jar target/rest-demo.jar
-   ```
-
-6. **Test in Browser**
-
-    * Open: `http://localhost:8080/` → Should display `Hello World`.
-
----
-
-
-## 4: Running Spring Boot Web App On Docker
-
-1. **Check Running Containers**
+### 4. Build the JAR
 
 ```bash
+mvn clean package
+```
+
+### 5. Run the JAR locally
+
+```bash
+java -jar target/rest-demo.jar
+```
+
+### 6. Test in browser
+
+Open `http://localhost:8080/` → should display `Hello World`.
+
+---
+
+## 4 — Running Spring Boot on Docker
+
+```bash
+# 1. Check running containers
 docker ps
-```
 
-2. **List All Files in the Container (JDK Environment)**
-
-```bash
+# 2. List all files in the container's root
 docker exec <container_name> ls -a
-```
- Lists all folders and files in the container's root directory.
 
-3. **Check Contents of /tmp Directory**
-
-```bash
+# 3. Check contents of /tmp
 docker exec <container_name> ls /tmp
-```
- It will contain only one file in /tmp at the initial stage.
 
-
-4.  Copy the Spring Boot JAR File into the Container
-
-```bash
+# 4. Copy the JAR into the container
 docker cp target/rest-demo.jar <container_name>:/tmp
-```
- This copies the `rest-demo.jar` into the container’s /tmp directory.
 
-
-5. Verify the JAR File is Present
-
-```bash
+# 5. Verify the JAR is present
 docker exec <container_name> ls /tmp
-```
- The `rest-demo.jar` file will be available in addition to the existing content.
 
-
-6.  Commit the Container to Create a New Docker Image
-
-```bash
+# 6. Commit the container as a new image
 docker commit <container_name> utk/rest-demo:v1
-```
- Creates a new Docker image named `utk/rest-demo` with tag `v1` from the current container state.
 
-
-7. List Docker Images
-
-```bash
+# 7. Confirm the image was created
 docker images
-```
- Verifies that `utk/rest-demo:v1` image has been created successfully.
 
-
-8. Default Behavior: JShell
-
-When running utk/rest-demo:v1, the container defaults to JShell:
-
-```bash
+# 8. Run v1 — defaults to JShell
 docker run utk/rest-demo:v1
 ```
 
+### Overriding the default command with `--change`
 
-9. Set Default Command to Run JAR Using --change
-
-To override the default JShell behavior, the `--change` flag is used while committing:
-
-```bash
-docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' <container_name> utk/rest-demo:v2
-```
- This sets the default command to run the JAR directly when the image is run.
-
-
-10. Run the Updated Image (v2)
+By default, `utk/rest-demo:v1` opens JShell. Override this when committing:
 
 ```bash
+# Commit with a default CMD to run the JAR directly
+docker commit --change='CMD ["java", "-jar", "/tmp/rest-demo.jar"]' \
+  <container_name> utk/rest-demo:v2
+
+# Run v2 — starts the Spring Boot app directly
 docker run utk/rest-demo:v2
-```
- This will now run the Spring Boot application from the JAR instead of entering JShell.
 
-
-11. Map Ports While Running the Container
-
-```bash
+# Map ports
 docker run -p 8081:8081 utk/rest-demo:v2
 ```
- Maps port `8081` of the container to `8081` on the host machine.
 
-## 5: Dockerfile For Docker Images
-
-file
 ---
+
+## 5 — Dockerfile
+
+Instead of committing containers manually, define the image declaratively with a `Dockerfile`:
+
+```dockerfile
 FROM amazoncorretto:26-jdk
 LABEL authors="Utkarsh"
 ADD target/rest-demo.jar rest-demo.jar
-ENTRYPOINT ["java", "-jar","/rest-demo.jar"]
-----
+ENTRYPOINT ["java", "-jar", "/rest-demo.jar"]
+```
 
-docker build -t utk/rest-demo:v4 .   
+### `docker build` variants
 
+| Command | What it does |
+|---|---|
+| `docker build .` | Build from Dockerfile in current directory |
+| `docker build -t <name>:<tag> .` | Build and tag the image |
+| `docker build https://github.com/docker/rootfs.git#container:docker` | Build from a remote Git repo |
+| `docker build https://yourserver/file.tar.gz` | Build from a remote tar archive |
+
+```bash
+# Build and tag
+docker build -t utk/rest-demo:v4 .
+
+# Confirm image exists
 docker images
 
+# Run with port mapping
 docker run -p 8080:8080 utk/rest-demo:v4
+```
 
-## 6: Web App With Postgres
+---
 
-Added PostgreSQL and JPA dependencies to pom.xml
+## 6 — Web App with Postgres
 
-Added student database, repository, and controller for managing students.
+- Added PostgreSQL and JPA dependencies to `pom.xml`
+- Added `Student` entity, repository, and REST controller
+- Added database initialization and a `/students` endpoint to retrieve students
 
-Added database initialization, student repository, and REST controller to retrieve students.
+---
 
-[//]: # ()
-[//]: # (## 7: Docker Compose)
+## 7 — Docker Compose
 
-[//]: # ()
-[//]: # (## 8: Running Multiple Containers)
+### Key commands
 
-[//]: # ()
-[//]: # (## 9: Docker Volumes)
+| Command | What it does |
+|---|---|
+| `docker-compose up` | Create and start all containers |
+| `docker-compose up --build` | Rebuild images then start containers |
+| `docker-compose down` | Stop and remove all containers |
+| `docker-compose ps` | List containers defined in the Compose file |
+| `docker-compose logs` | View logs from all containers |
+
+### `docker-compose.yml`
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "8090:8080"
+
+  postgres:
+    image: postgres:latest
+    environment:
+      username: root
+      password: root
+      DB: studentsDkr07042026
+    ports:
+      - "5433:5432"
+```
+
+### Workflow
+
+```bash
+# 1. Build the JAR
+mvn clean package
+
+# 2. Build images and start containers
+docker-compose up --build
+
+# 3. Verify images
+docker images
+```
